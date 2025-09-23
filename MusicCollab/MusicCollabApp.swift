@@ -7,11 +7,17 @@
 
 import SwiftUI
 
+#if os(iOS)
 @main
 struct MusicCollabApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppCoordinatorView()
         }
     }
+
+    init() {
+        AudioManager.shared.startEngine()
+    }
 }
+#endif

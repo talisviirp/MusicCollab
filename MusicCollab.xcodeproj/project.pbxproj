@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4685AD642E7F3CC8007E8DDE /* IOS_MVP_PLAN.md in Resources */ = {isa = PBXBuildFile; fileRef = 4685AD632E7F3CC8007E8DDE /* IOS_MVP_PLAN.md */; };
+		46E210402D19DE4E005D6123 /* AudioKit in Frameworks */ = {isa = PBXBuildFile; productRef = 46E2103F2D19DE4E005D6123 /* AudioKit */; };
+		46E210432D19E1D2005D6123 /* Keyboard in Frameworks */ = {isa = PBXBuildFile; productRef = 46E210422D19E1D2005D6123 /* Keyboard */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		469071212CDBE21100B836CC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,14 +30,28 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4685AD632E7F3CC8007E8DDE /* IOS_MVP_PLAN.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = IOS_MVP_PLAN.md; sourceTree = "<group>"; };
 		469071102CDBE21000B836CC /* MusicCollab.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicCollab.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		469071202CDBE21100B836CC /* MusicCollabTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MusicCollabTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4690712A2CDBE21100B836CC /* MusicCollabUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MusicCollabUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		46E210452D19E879005D6123 /* Exceptions for "MusicCollab" folder in "MusicCollab" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4690710F2CDBE21000B836CC /* MusicCollab */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		469071122CDBE21000B836CC /* MusicCollab */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				46E210452D19E879005D6123 /* Exceptions for "MusicCollab" folder in "MusicCollab" target */,
+			);
 			path = MusicCollab;
 			sourceTree = "<group>";
 		};
@@ -52,6 +72,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46E210402D19DE4E005D6123 /* AudioKit in Frameworks */,
+				46E210432D19E1D2005D6123 /* Keyboard in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,6 +97,7 @@
 		469071072CDBE21000B836CC = {
 			isa = PBXGroup;
 			children = (
+				4685AD632E7F3CC8007E8DDE /* IOS_MVP_PLAN.md */,
 				469071122CDBE21000B836CC /* MusicCollab */,
 				469071232CDBE21100B836CC /* MusicCollabTests */,
 				4690712D2CDBE21100B836CC /* MusicCollabUITests */,
@@ -112,6 +135,8 @@
 			);
 			name = MusicCollab;
 			packageProductDependencies = (
+				46E2103F2D19DE4E005D6123 /* AudioKit */,
+				46E210422D19E1D2005D6123 /* Keyboard */,
 			);
 			productName = MusicCollab;
 			productReference = 469071102CDBE21000B836CC /* MusicCollab.app */;
@@ -195,6 +220,10 @@
 			);
 			mainGroup = 469071072CDBE21000B836CC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				46E2103E2D19DDB7005D6123 /* XCRemoteSwiftPackageReference "AudioKit" */,
+				46E210412D19E1AC005D6123 /* XCRemoteSwiftPackageReference "Keyboard" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 469071112CDBE21000B836CC /* Products */;
 			projectDirPath = "";
@@ -212,6 +241,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4685AD642E7F3CC8007E8DDE /* IOS_MVP_PLAN.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -396,8 +426,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MusicCollab/Preview Content\"";
+				DEVELOPMENT_TEAM = 7YXYEYXFB8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MusicCollab/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -424,8 +456,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MusicCollab/Preview Content\"";
+				DEVELOPMENT_TEAM = 7YXYEYXFB8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MusicCollab/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -552,6 +586,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		46E2103E2D19DDB7005D6123 /* XCRemoteSwiftPackageReference "AudioKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AudioKit/AudioKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.6.4;
+			};
+		};
+		46E210412D19E1AC005D6123 /* XCRemoteSwiftPackageReference "Keyboard" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AudioKit/Keyboard";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.7;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		46E2103F2D19DE4E005D6123 /* AudioKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 46E2103E2D19DDB7005D6123 /* XCRemoteSwiftPackageReference "AudioKit" */;
+			productName = AudioKit;
+		};
+		46E210422D19E1D2005D6123 /* Keyboard */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 46E210412D19E1AC005D6123 /* XCRemoteSwiftPackageReference "Keyboard" */;
+			productName = Keyboard;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 469071082CDBE21000B836CC /* Project object */;
 }

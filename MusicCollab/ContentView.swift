@@ -1,24 +1,15 @@
-//
-//  ContentView.swift
-//  MusicCollab
-//
-//  Created by Talis Viirpalu on 06.11.2024.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+        AppCoordinatorView()
     }
 }
 
-#Preview {
-    ContentView()
+// MARK: - Preview
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+            .previewDisplayName("MusicCollab App")
+    }
 }

@@ -1,93 +1,116 @@
-# Music Collaboration iOS App MVP Plan
+# 🎶 iOS Collaborative DAW MVP Backlog (for GitHub Copilot)
 
-## Overview
-
-This document outlines the step-by-step MVP plan for building an iOS client application that is fully compatible with
-the Music Collaboration NestJS backend service. The app will allow users to create and join rooms, collaborate on
-sequencer patterns in real time, and interact with other users using WebSockets.
+This file defines the **execution plan** for the iOS DAW + Collaboration MVP.  
+Each epic is broken into **issues/tasks**.  
+Copilot should work on **one task at a time**, following the cycle instructions below.
 
 ---
 
-## 1. Core Features (MVP)
+## 🔄 Copilot Development Cycle Instructions
 
-### A. User Management
+When starting a task, **always follow this cycle**:
 
-- [ ] User can enter a nickname and create a temporary user profile (no authentication required)
-- [ ] User ID is stored locally for session persistence
+1. **Read the Task**
+    - Understand scope, inputs, outputs, and acceptance criteria.
+    - Identify which files/modules need to be created or updated.
 
-### B. Room Management
+2. **Implement the Feature**
+    - Write clean Swift/SwiftUI code.
+    - Use `AVAudioEngine`, `AVAudioUnitSampler`, and Apple APIs when working with audio.
+    - Follow MVVM + SwiftUI best practices.
+    - Use dependency injection where possible.
 
-- [ ] List all available rooms (GET /rooms)
-- [ ] Create a new room (POST /rooms/create)
-- [ ] Join a room (POST /rooms/join/:roomId)
-- [ ] Leave a room (POST /rooms/leave/:roomId)
-- [ ] View room details (GET /rooms/:roomId)
+3. **Verify Locally**
+    - Build and run in Xcode.
+    - Add quick manual tests (button press → sound, toggle → step active, etc.).
+    - Log errors clearly (`print`, `os_log`).
 
-### C. Sequencer Collaboration
-
-- [ ] Connect to the backend WebSocket gateway (namespace: /sequencer)
-- [ ] Receive and display the current sequencer state for the room
-- [ ] Start/stop the sequencer (emit 'start'/'stop' events)
-- [ ] Adjust BPM (emit 'set_bpm' event)
-- [ ] Add/remove sounds from steps (emit 'update_step' event)
-- [ ] Receive real-time updates from other users in the room
-
-### D. UI/UX
-
-- [ ] Simple onboarding: enter nickname, create/join room
-- [ ] Room lobby: show users in the room, sequencer controls, and pattern grid
-- [ ] Sequencer grid: 16 steps, each can be toggled on/off and assigned a sound
-- [ ] Real-time feedback for sequencer state changes
+4**Mark Task as Done**
+    - Update this backlog or GitHub issue status.
 
 ---
 
-## 2. Technical Stack
+## 📌 Backlog by Epics
 
-- **Language:** Swift
-- **UI Framework:** SwiftUI (recommended for rapid MVP development)
-- **Networking:** URLSession for REST, [Socket.IO-Client-Swift](https://github.com/socketio/socket.io-client-swift) for
-  WebSockets
-- **State Management:** ObservableObject/ViewModel pattern
-- **Persistence:** UserDefaults for user ID and nickname
+### **Epic 1 — Project Setup & Foundations** ✅ **COMPLETED**
 
----
+**Task 1.1 — Create SwiftUI Xcode project** ✅ **DONE**
+- Initialize new SwiftUI iOS project.
+- Add targets for iOS 16+.
+- Configure bundle identifier.  
+  ✅ *Acceptance Criteria*: Project builds and runs "Hello World".
 
-## 3. Step-by-Step Execution Plan
+**Task 1.2 — Configure entitlements & session** ✅ **DONE**
+- Enable file access + audio background mode in entitlements.
+- Setup `AVAudioSession` with low-latency category.  
+  ✅ *Acceptance Criteria*: App launches with active audio session, no crash.
 
-1. **Project Setup**
-    - Initialize SwiftUI project
-    - Add dependencies (Socket.IO-Client-Swift via Swift Package Manager)
-2. **User Onboarding**
-    - Nickname entry screen
-    - Create user via POST /rooms/user
-    - Store userId and nickname in UserDefaults
-3. **Room List & Creation**
-    - Fetch and display rooms (GET /rooms)
-    - Create room (POST /rooms/create)
-    - Join/leave room endpoints
-4. **Room Lobby & Sequencer**
-    - Connect to WebSocket on room join
-    - Display sequencer state and controls
-    - Implement sequencer grid UI
-    - Handle start/stop, BPM, and step updates via WebSocket
-5. **Real-Time Collaboration**
-    - Listen for sequencer_state events and update UI
-    - Broadcast user actions to backend
-6. **Testing & Validation**
-    - Test all flows with backend (room creation, join/leave, sequencer sync)
-    - Handle error states (e.g., room not found, connection lost)
+**Task 1.3 — Base architecture** ✅ **DONE**
+- Create `AudioManager`, `ProjectManager`, `CollaborationManager` stubs.
+- Create SwiftUI navigation skeleton: Onboarding → Room List → Sequencer.  
+  ✅ *Acceptance Criteria*: User can navigate between empty screens.
 
 ---
 
-## 4. Future Improvements (Post-MVP)
+### **Epic 2 — User & Room Management** ✅ **COMPLETED**
 
-- User authentication and persistent profiles
-- Audio playback for sequencer steps
-- Advanced sequencer features (patterns, effects, etc.)
-- Push notifications for invites or room activity
-- Improved UI/UX and animations
+**Task 2.1 — Onboarding screen** ✅ **DONE**
+- Screen: enter nickname.
+- Persist `userId` + nickname in `UserDefaults`.  
+  ✅ *Acceptance Criteria*: Relaunch app → nickname persists.
+
+**Task 2.2 — Room list API integration** ✅ **DONE**
+- Fetch rooms with `GET /rooms` (implemented with mock data).
+- Display list of rooms in SwiftUI.  
+  ✅ *Acceptance Criteria*: Rooms load and refresh without crash.
+
+**Task 2.3 — Create/Join/Leave room** ✅ **DONE**
+- Integrate `POST /rooms/create`, `POST /rooms/join/:roomId`, `POST /rooms/leave/:roomId` (mock implementation).
+- Navigate to room lobby on join.  
+  ✅ *Acceptance Criteria*: User can create/join/leave without error.
 
 ---
 
-_Last updated: 2025-09-20_
+### **Epic 3 — Core Audio Engine Bootstrapping** ✅ **COMPLETED**
 
+**Task 3.1 — AudioManager setup** ✅ **DONE**
+- Implement `AudioManager` with `AVAudioEngine` + master mixer node.
+- Safe start/stop of engine.  
+  ✅ *Acceptance Criteria*: Engine starts successfully.
+
+**Task 3.2 — Load & play sample** ✅ **DONE**
+- Add `AVAudioUnitSampler`.
+- Load bundled WAV into sampler.
+- Hardcoded button plays sample via `noteOn`.  
+  ✅ *Acceptance Criteria*: Button press → audible playback.
+
+---
+
+### **Epic 4 — Sequencer Core** ✅ **COMPLETED**
+
+**Task 4.1 — Sequencer models** ✅ **DONE**
+- Create `Pattern`, `Track`, `Step` data models.
+- In-memory only.  
+  ✅ *Acceptance Criteria*: Can create a pattern with 16 steps.
+
+**Task 4.2 — AVAudioSequencer integration** ✅ **DONE**
+- Create sequencer instance tied to AudioEngine.
+- Map steps to MIDI events.  
+  ✅ *Acceptance Criteria*: Hardcoded pattern loops on play.
+
+**Task 4.3 — Transport controls** ✅ **DONE**
+- Play/stop buttons in UI.
+- Tempo slider.  
+  ✅ *Acceptance Criteria*: Playback starts/stops, tempo changes reflected.
+
+---
+
+### **Epic 5 — Sequencer UI & Collaboration**
+
+**Task 5.1 — Step grid UI**
+- Build SwiftUI grid of 16 steps.
+- Toggle step on/off with tap.  
+  ✅ *Acceptance Criteria*: Tapping toggles state visually.
+
+**Task 5.2 — Pattern binding**
+- Toggle updates `Patt
