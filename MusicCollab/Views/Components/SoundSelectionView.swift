@@ -35,8 +35,8 @@ struct SoundSelectionView: View {
     private let sounds = [
         ("kick", "Kick", Color.red),
         ("snare", "Snare", Color.blue),
-        ("hihat", "Hi-Hat", Color.green),
-        ("hihat2", "Hi-Hat2", Color.purple)
+        ("hiHat", "Hi-Hat", Color.green),
+        ("hiHat2", "Hi-Hat2", Color.purple)
     ]
     
     var body: some View {
@@ -71,8 +71,8 @@ struct SoundSelectionView: View {
         switch sound {
         case "kick": return "circle.fill"
         case "snare": return "oval.fill"
-        case "hihat": return "circle.fill"
-        case "hihat2": return "circle.fill"
+        case "hiHat": return "circle.fill"
+        case "hiHat2": return "circle.fill"
         default: return "circle.fill"
         }
     }

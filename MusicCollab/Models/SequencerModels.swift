@@ -18,7 +18,7 @@ struct Step: Identifiable, Codable, Hashable {
 }
 
 // MARK: - Track Model
-class Track: Identifiable, ObservableObject {
+class Track: Identifiable, ObservableObject, Equatable {
     let id: UUID
     @Published var name: String
     @Published var steps: [Step]
@@ -53,6 +53,18 @@ class Track: Identifiable, ObservableObject {
         guard index >= 0 && index < steps.count else { return }
         objectWillChange.send()
         steps[index].isActive = isActive
+    }
+    
+    // MARK: - Equatable
+    static func == (lhs: Track, rhs: Track) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.name == rhs.name &&
+               lhs.steps == rhs.steps &&
+               lhs.isMuted == rhs.isMuted &&
+               lhs.isSoloed == rhs.isSoloed &&
+               lhs.volume == rhs.volume &&
+               lhs.pan == rhs.pan &&
+               lhs.sampleName == rhs.sampleName
     }
 }
 

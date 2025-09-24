@@ -47,11 +47,19 @@ struct StepGridView: View {
                 // Landscape: 1x16 steps
                 HStack(spacing: 2) {
                     ForEach(0..<16, id: \.self) { stepIndex in
-                        StepButton(
+                        StepButtonContent(
                             stepIndex: stepIndex,
-                            sequencerState: sequencerState,
-                            selectedSound: selectedSound
+                            track: sequencerState.currentPattern.tracks.first { $0.sampleName == selectedSound } ?? Track(name: "Default", sampleName: selectedSound),
+                            selectedSound: selectedSound,
+                            isCurrentStep: sequencerState.currentStep == stepIndex
                         )
+                        
+                        // Add cap after each 4th step except the last step
+                        if (stepIndex + 1) % 4 == 0 && stepIndex < 15 {
+                            Rectangle()
+                                .fill(Color.primary.opacity(0.3))
+                                .frame(width: 2, height: 20)
+                        }
                     }
                 }
             } else {
@@ -60,22 +68,38 @@ struct StepGridView: View {
                     // First row (steps 0-7)
                     HStack(spacing: 2) {
                         ForEach(0..<8, id: \.self) { stepIndex in
-                            StepButton(
+                            StepButtonContent(
                                 stepIndex: stepIndex,
-                                sequencerState: sequencerState,
-                                selectedSound: selectedSound
+                                track: sequencerState.currentPattern.tracks.first { $0.sampleName == selectedSound } ?? Track(name: "Default", sampleName: selectedSound),
+                                selectedSound: selectedSound,
+                                isCurrentStep: sequencerState.currentStep == stepIndex
                             )
+                            
+                            // Add cap after each 4th step except the last step in row
+                            if (stepIndex + 1) % 4 == 0 && stepIndex < 7 {
+                                Rectangle()
+                                    .fill(Color.primary.opacity(0.3))
+                                    .frame(width: 2, height: 20)
+                            }
                         }
                     }
                     
                     // Second row (steps 8-15)
                     HStack(spacing: 2) {
                         ForEach(8..<16, id: \.self) { stepIndex in
-                            StepButton(
+                            StepButtonContent(
                                 stepIndex: stepIndex,
-                                sequencerState: sequencerState,
-                                selectedSound: selectedSound
+                                track: sequencerState.currentPattern.tracks.first { $0.sampleName == selectedSound } ?? Track(name: "Default", sampleName: selectedSound),
+                                selectedSound: selectedSound,
+                                isCurrentStep: sequencerState.currentStep == stepIndex
                             )
+                            
+                            // Add cap after each 4th step except the last step in row
+                            if (stepIndex + 1) % 4 == 0 && stepIndex < 15 {
+                                Rectangle()
+                                    .fill(Color.primary.opacity(0.3))
+                                    .frame(width: 2, height: 20)
+                            }
                         }
                     }
                 }
@@ -84,85 +108,89 @@ struct StepGridView: View {
     }
 }
 
-/**
- # StepButton
- 
- Individual step button component within the step grid.
- 
- ## Features
- - Toggle step active/inactive state
- - Visual feedback for different states
- - Color matching selected sound
- - Playing step animation
- - Large touch target for easy interaction
- */
-struct StepButton: View {
+
+struct StepButtonContent: View {
     let stepIndex: Int
-    @ObservedObject var sequencerState: SequencerState
+    @ObservedObject var track: Track
     let selectedSound: String
+    let isCurrentStep: Bool
     
     private var isActive: Bool {
-        let track = sequencerState.currentPattern.tracks.first { $0.sampleName == selectedSound }
-        guard let track = track, stepIndex >= 0 && stepIndex < track.steps.count else { return false }
+        guard stepIndex >= 0 && stepIndex < track.steps.count else {
+            return false
+        }
         return track.steps[stepIndex].isActive
     }
     
-    private var isCurrentStep: Bool {
-        sequencerState.currentStep == stepIndex
+    private var isFirstStepOfBeat: Bool {
+        stepIndex % 4 == 0
     }
     
     private var buttonColor: Color {
         switch selectedSound {
         case "kick": return .red
         case "snare": return .blue
-        case "hihat": return .green
-        case "hihat2": return .purple
+        case "hiHat": return .green
+        case "hiHat2": return .purple
         default: return .gray
         }
     }
     
     var body: some View {
-        Button {
-            toggleStep()
-        } label: {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isActive ? buttonColor : Color.clear)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isActive ? buttonColor : Color.primary, lineWidth: 2)
-                )
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
-                .scaleEffect(isCurrentStep ? 1.1 : 1.0)
-                .animation(.easeInOut(duration: 0.1), value: isCurrentStep)
+        Button(action: {
+            print("Tapping step \(stepIndex) for sound \(selectedSound)")
+            let wasActive = track.steps[stepIndex].isActive
+            track.toggleStep(at: stepIndex)
+            let isNowActive = track.steps[stepIndex].isActive
+            
+            if isNowActive && !wasActive {
+                print("Sound \(selectedSound) is added to step \(stepIndex)")
+            } else if !isNowActive && wasActive {
+                print("Sound \(selectedSound) is removed from step \(stepIndex)")
+            }
+        }) {
+            ZStack {
+                // Background rectangle
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isActive ? buttonColor : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.primary, lineWidth: isFirstStepOfBeat ? 4 : 2)
+                    )
+                
+                // Debug: Show step index
+                Text("\(stepIndex)")
+                    .font(.caption2)
+                    .foregroundColor(.primary)
+                    .fontWeight(.bold)
+            }
         }
         .buttonStyle(PlainButtonStyle())
-    }
-    
-    private func toggleStep() {
-        guard let trackIndex = sequencerState.currentPattern.tracks.firstIndex(where: { $0.sampleName == selectedSound }) else { return }
-        sequencerState.currentPattern.tracks[trackIndex].toggleStep(at: stepIndex)
+        .frame(maxWidth: .infinity)
+        .frame(height: 80)
+        .scaleEffect(isCurrentStep ? 1.1 : 1.0)
+        .animation(.easeInOut(duration: 0.01), value: isCurrentStep)
     }
 }
 
 // MARK: - Preview
-struct StepGridView_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: 20) {
-            StepGridView(
-                sequencerState: SequencerState(pattern: Pattern.mockPattern),
-                selectedSound: "kick",
-                isLandscape: true
-            )
-            .previewDisplayName("Landscape (1x16)")
-            
-            StepGridView(
-                sequencerState: SequencerState(pattern: Pattern.mockPattern),
-                selectedSound: "snare",
-                isLandscape: false
-            )
-            .previewDisplayName("Portrait (2x8)")
-        }
-        .padding()
-    }
-}
+//struct StepGridView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        VStack(spacing: 20) {
+//            StepGridView(
+//                sequencerState: SequencerState(pattern: Pattern.mockPattern),
+//                selectedSound: "kick",
+//                isLandscape: true
+//            )
+//            .previewDisplayName("Landscape (1x16)")
+//            
+//            StepGridView(
+//                sequencerState: SequencerState(pattern: Pattern.mockPattern),
+//                selectedSound: "snare",
+//                isLandscape: false
+//            )
+//            .previewDisplayName("Portrait (2x8)")
+//        }
+//        .padding()
+//    }
+//}

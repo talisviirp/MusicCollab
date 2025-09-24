@@ -45,31 +45,34 @@ struct SequencerView: View {
         GeometryReader { geometry in
             NavigationView {
                 VStack(spacing: 16) {
-                    // Tempo, Transport, and Sound Selection in one row
-                    HStack(spacing: 12) {
-                        // Tempo Control
-                        TempoButtonView(tempo: $sequencerState.currentPattern.tempo, showingTempoControl: $showingTempoControl)
-                        
-                        // Transport Controls
-                        TransportControlsView(
-                            isPlaying: $sequencerState.isPlaying,
-                            audioManager: audioManager
-                        )
-                    }
-                    
-                    // Sound Selection - Full width
-                    SoundSelectionView(selectedSound: $selectedSound)
-                    
-                    // Step Grid - Responsive to orientation
-                    if geometry.size.width > geometry.size.height {
-                        // Landscape: 1x16 steps
-                        StepGridView(sequencerState: sequencerState, selectedSound: selectedSound, isLandscape: true)
-                    } else {
-                        // Portrait: 2x8 steps
-                        StepGridView(sequencerState: sequencerState, selectedSound: selectedSound, isLandscape: false)
-                    }
-                    
                     Spacer()
+                    
+                    // Bottom section with controls and sequencer
+                    VStack(spacing: 16) {
+                        // Tempo, Transport, and Sound Selection in one row
+                        HStack(spacing: 12) {
+                            // Tempo Control
+                            TempoButtonView(tempo: $sequencerState.currentPattern.tempo, showingTempoControl: $showingTempoControl)
+                            
+                            // Transport Controls
+                            TransportControlsView(
+                                isPlaying: $sequencerState.isPlaying,
+                                audioManager: audioManager
+                            )
+                        }
+                        
+                        // Sound Selection - Full width
+                        SoundSelectionView(selectedSound: $selectedSound)
+                        
+                        // Step Grid - Responsive to orientation - positioned at bottom
+                        if geometry.size.width > geometry.size.height {
+                            // Landscape: 1x16 steps
+                            StepGridView(sequencerState: sequencerState, selectedSound: selectedSound, isLandscape: true)
+                        } else {
+                            // Portrait: 2x8 steps
+                            StepGridView(sequencerState: sequencerState, selectedSound: selectedSound, isLandscape: false)
+                        }
+                    }
                 }
                 .padding()
                 .navigationTitle("Sequencer")

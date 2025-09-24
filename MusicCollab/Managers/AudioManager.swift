@@ -17,6 +17,19 @@ final class AudioManager: ObservableObject {
     private var displayLink: CADisplayLink?
     private var masterVolume: Float = 1.0
     
+    // Real-time safe audio thread management
+    private let audioQueue = DispatchQueue(label: "com.musiccollab.audio", qos: .userInteractive)
+    private var audioThreadTimer: DispatchSourceTimer?
+    private let audioThreadLock = NSLock()
+    
+    // Pre-allocated buffers for real-time safety
+    private var audioBuffers: [String: AVAudioPCMBuffer] = [:]
+    
+    deinit {
+        stopAudioThread()
+        stopEngine()
+    }
+    
     // Sample file names
     private let sampleFiles = [
         "kick": "kick",
@@ -28,15 +41,42 @@ final class AudioManager: ObservableObject {
     private init() {
         setupAudioEngine()
         loadSamples()
+        setupRouteChangeNotification()
+        
+        // Configure audio session and start engine
+        do {
+            try configureAudioSession()
+            startEngine()
+        } catch {
+            print("Failed to configure audio session: \(error)")
+            // Try with minimal configuration
+            do {
+                try configureMinimalAudioSession()
+                startEngine()
+            } catch {
+                print("Failed to configure minimal audio session: \(error)")
+            }
+        }
     }
 
     func startEngine() {
         guard !isStarted else { return }
+        
+        // Ensure engine is prepared and has nodes attached
+        if !engine.isRunning {
+            engine.prepare()
+            
+            // Verify engine has at least one node attached
+            guard !engine.attachedNodes.isEmpty else {
+                print("Error: No audio nodes attached to engine")
+                return
+            }
+        }
+        
         do {
-            try configureAudioSession()
             try engine.start()
             isStarted = true
-            print("Audio engine started")
+            print("Audio engine started successfully")
         } catch {
             print("Audio engine failed to start: \(error)")
         }
@@ -98,11 +138,23 @@ final class AudioManager: ObservableObject {
     
     func startPlayback() {
         guard let state = sequencerState else { return }
+        
+        // Ensure audio engine is started and properly configured
+        if !isStarted {
+            startEngine()
+        }
+        
+        // Double-check engine is running
+        guard isStarted && engine.isRunning else {
+            print("Error: Audio engine not running, cannot start playback")
+            return
+        }
+        
         isPlaying = true
         state.isPlaying = true
         
-        // Start the sequencer display link for precise timing
-        startSequencerDisplayLink()
+        // Start the real-time safe audio thread for precise timing
+        startAudioThread()
         
         print("Sequencer started")
     }
@@ -113,7 +165,7 @@ final class AudioManager: ObservableObject {
         state.isPlaying = false
         state.reset()
         
-        stopSequencerDisplayLink()
+        stopAudioThread()
         print("Sequencer stopped")
     }
     
@@ -122,28 +174,40 @@ final class AudioManager: ObservableObject {
         isPlaying = false
         state.isPlaying = false
         
-        stopSequencerDisplayLink()
+        stopAudioThread()
         print("Sequencer paused")
     }
     
-    private func startSequencerDisplayLink() {
-        guard let state = sequencerState else { return }
+    private func startAudioThread() {
+        guard sequencerState != nil else { return }
+        
+        // Stop any existing timer
+        stopAudioThread()
         
         // Reset timing
         lastStepTime = CACurrentMediaTime()
         
-        // Create display link for precise timing
-        displayLink = CADisplayLink(target: self, selector: #selector(displayLinkTick))
-        displayLink?.add(to: .main, forMode: .common)
+        // Create high-priority timer on dedicated audio thread
+        audioThreadTimer = DispatchSource.makeTimerSource(queue: audioQueue)
+        audioThreadTimer?.schedule(deadline: .now(), repeating: .milliseconds(2)) // 2ms precision for real-time
+        audioThreadTimer?.setEventHandler { [weak self] in
+            self?.audioThreadTick()
+        }
+        audioThreadTimer?.resume()
     }
     
-    private func stopSequencerDisplayLink() {
-        displayLink?.invalidate()
-        displayLink = nil
+    private func stopAudioThread() {
+        audioThreadTimer?.cancel()
+        audioThreadTimer = nil
     }
     
-    @objc private func displayLinkTick() {
-        guard let state = sequencerState, isPlaying else { return }
+    private func audioThreadTick() {
+        // Real-time safe: minimal work, no allocations, no locks
+        guard isPlaying else { return }
+        
+        // Get current state atomically
+        let currentState = sequencerState
+        guard let state = currentState else { return }
         
         // Calculate step duration based on current tempo
         let stepDuration = 60.0 / (state.currentPattern.tempo * 4) // 16th notes
@@ -151,7 +215,10 @@ final class AudioManager: ObservableObject {
         
         // Check if it's time for the next step
         if currentTime - lastStepTime >= stepDuration {
-            playCurrentStep()
+            // Schedule audio operations on the audio queue
+            audioQueue.async { [weak self] in
+                self?.playCurrentStep()
+            }
             lastStepTime = currentTime
         }
     }
@@ -181,8 +248,10 @@ final class AudioManager: ObservableObject {
             }
         }
         
-        // Move to next step
-        state.nextStep()
+        // Move to next step - dispatch to main thread for UI updates
+        DispatchQueue.main.async {
+            state.nextStep()
+        }
     }
     
     private func playSampleForTrack(_ track: Track, step: Step) {
@@ -191,21 +260,32 @@ final class AudioManager: ObservableObject {
     }
     
     private func playSample(named sampleName: String, volume: Double = 1.0, pan: Double = 0.0) {
-        guard let playerNode = playerNodes[sampleName],
-              let audioFile = audioFiles[sampleName] else {
-            print("Sample not found: \(sampleName)")
-            return
+        // Ensure audio operations happen on the audio queue for thread safety
+        audioQueue.async { [weak self] in
+            guard let self = self,
+                  let playerNode = self.playerNodes[sampleName],
+                  let audioFile = self.audioFiles[sampleName] else {
+                print("Sample not found: \(sampleName)")
+                return
+            }
+            
+            // Apply volume, pan, and master volume
+            playerNode.volume = Float(volume) * self.masterVolume
+            playerNode.pan = Float(pan)
+            
+            // Use pre-allocated buffer if available, otherwise schedule file
+            if let buffer = self.audioBuffers[sampleName] {
+                playerNode.stop()
+                playerNode.scheduleBuffer(buffer, at: nil, options: [], completionHandler: nil)
+                playerNode.play()
+            } else {
+                playerNode.stop()
+                playerNode.scheduleFile(audioFile, at: nil) {
+                    print("Played sample: \(sampleName) with volume: \(volume), pan: \(pan)")
+                }
+                playerNode.play()
+            }
         }
-        
-        // Apply volume, pan, and master volume
-        playerNode.volume = Float(volume) * masterVolume
-        playerNode.pan = Float(pan)
-        
-        playerNode.stop()
-        playerNode.scheduleFile(audioFile, at: nil) {
-            print("Played sample: \(sampleName) with volume: \(volume), pan: \(pan)")
-        }
-        playerNode.play()
     }
     
     // MARK: - Private Setup Methods
@@ -221,6 +301,9 @@ final class AudioManager: ObservableObject {
         
         // Setup sequencer
         sequencer = AVAudioSequencer(audioEngine: engine)
+        
+        // Verify engine setup
+        print("Audio engine setup complete - attached nodes: \(engine.attachedNodes.count)")
     }
     
     private func loadSamples() {
@@ -233,6 +316,14 @@ final class AudioManager: ObservableObject {
             do {
                 let audioFile = try AVAudioFile(forReading: url)
                 audioFiles[sampleName] = audioFile
+                
+                // Pre-allocate buffer for real-time safety
+                if let buffer = AVAudioPCMBuffer(pcmFormat: audioFile.processingFormat, frameCapacity: AVAudioFrameCount(audioFile.length)) {
+                    try audioFile.read(into: buffer)
+                    audioBuffers[sampleName] = buffer
+                    print("Pre-allocated buffer for sample: \(sampleName)")
+                }
+                
                 print("Loaded sample: \(sampleName)")
             } catch {
                 print("Failed to load sample \(sampleName): \(error)")
@@ -243,13 +334,73 @@ final class AudioManager: ObservableObject {
     private func configureAudioSession() throws {
         #if os(iOS)
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers, .defaultToSpeaker, .allowBluetoothHFP])
+        
+        // First deactivate the session to reset any previous configuration
+        try session.setActive(false, options: [])
+        
+        // Set category with proper options for playback
+        try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        
+        // Set preferred sample rate (must be done before activating)
         try session.setPreferredSampleRate(44_100)
-        try session.setPreferredIOBufferDuration(0.005) // Low latency for real-time audio
+        
+        // Set buffer duration for low latency
+        try session.setPreferredIOBufferDuration(0.005) // 5ms for better compatibility
+        
+        // Activate the session
         try session.setActive(true)
-        print("Audio session configured for low-latency playback")
+        
+        print("Audio session configured successfully - Sample rate: \(session.sampleRate)Hz, Buffer duration: \(session.ioBufferDuration)s")
         #else
         // No-op on non-iOS platforms
+        #endif
+    }
+    
+    private func configureMinimalAudioSession() throws {
+        #if os(iOS)
+        let session = AVAudioSession.sharedInstance()
+        
+        // Minimal configuration that should work on all devices
+        try session.setCategory(.playback, mode: .default)
+        try session.setActive(true)
+        
+        print("Minimal audio session configured - Sample rate: \(session.sampleRate)Hz, Buffer duration: \(session.ioBufferDuration)s")
+        #else
+        // No-op on non-iOS platforms
+        #endif
+    }
+    
+    private func setupRouteChangeNotification() {
+        #if os(iOS)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleRouteChange),
+            name: AVAudioSession.routeChangeNotification,
+            object: nil
+        )
+        #endif
+    }
+    
+    @objc private func handleRouteChange(notification: Notification) {
+        #if os(iOS)
+        guard let userInfo = notification.userInfo,
+              let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else {
+            return
+        }
+        
+        switch reason {
+        case .oldDeviceUnavailable, .newDeviceAvailable:
+            // Restart engine when headphones are unplugged or new device connected
+            if isStarted {
+                stopEngine()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.startEngine()
+                }
+            }
+        default:
+            break
+        }
         #endif
     }
 
