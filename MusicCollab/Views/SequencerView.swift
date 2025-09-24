@@ -62,7 +62,7 @@ struct SequencerView: View {
                         }
                         
                         // Sound Selection - Full width
-                        SoundSelectionView(selectedSound: $selectedSound)
+                        SoundSelectionView(selectedSound: $selectedSound, sequencerState: sequencerState)
                         
                         // Step Grid - Responsive to orientation - positioned at bottom
                         if geometry.size.width > geometry.size.height {

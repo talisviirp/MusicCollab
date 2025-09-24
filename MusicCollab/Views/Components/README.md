@@ -57,7 +57,10 @@ Components adapt to different screen sizes and orientations. Layout parameters c
 ### 4. State Management
 Components use `@ObservedObject` for shared state and `@State` for local state. State changes are propagated through bindings.
 
-### 5. Documentation
+### 5. Audio Threading
+Components interact with AudioManager through thread-safe APIs. All audio operations happen on a dedicated high-priority thread, ensuring UI responsiveness.
+
+### 6. Documentation
 Each component includes comprehensive documentation with:
 - Purpose and features
 - Usage examples
@@ -111,9 +114,15 @@ Components/
 
 ### External Dependencies
 - **SwiftUI**: UI framework
-- **AudioManager**: Audio playback and control
+- **AudioManager**: Professional audio engine with real-time threading
 - **SequencerState**: Sequencer state management
 - **Room**: Room data model
+
+### Audio Integration
+- **Real-Time Threading**: Audio operations run on dedicated high-priority thread
+- **Thread-Safe UI**: All UI updates happen on main thread
+- **Pre-allocated Buffers**: Zero-latency audio playback
+- **Professional Audio Session**: Low-latency configuration with fallback support
 
 ### Internal Dependencies
 - Components can depend on other components through composition

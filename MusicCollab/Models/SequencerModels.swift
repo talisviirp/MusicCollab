@@ -27,6 +27,7 @@ class Track: Identifiable, ObservableObject, Equatable {
     @Published var volume: Double // 0.0 to 1.0
     @Published var pan: Double // -1.0 to 1.0
     @Published var sampleName: String
+    @Published var effects: [String: AudioEffect] = [:]
     
     init(id: UUID = UUID(), name: String, steps: [Step] = [], isMuted: Bool = false, isSoloed: Bool = false, volume: Double = 0.8, pan: Double = 0.0, sampleName: String = "kick") {
         self.id = id
@@ -53,6 +54,24 @@ class Track: Identifiable, ObservableObject, Equatable {
         guard index >= 0 && index < steps.count else { return }
         objectWillChange.send()
         steps[index].isActive = isActive
+    }
+    
+    // MARK: - Effects Management
+    
+    func addEffect(_ effect: AudioEffect) {
+        effects[effect.id] = effect
+    }
+    
+    func removeEffect(withId id: String) {
+        effects.removeValue(forKey: id)
+    }
+    
+    func getEffect(withId id: String) -> AudioEffect? {
+        return effects[id]
+    }
+    
+    var enabledEffects: [AudioEffect] {
+        return effects.values.filter { $0.isEnabled }
     }
     
     // MARK: - Equatable
@@ -90,8 +109,8 @@ class Pattern: Identifiable, ObservableObject {
         return [
             Track(name: "Kick", sampleName: "kick"),
             Track(name: "Snare", sampleName: "snare"),
-            Track(name: "Hi-Hat", sampleName: "hiHat"),
-            Track(name: "Hi-Hat 2", sampleName: "hiHat2")
+            Track(name: "Hi-Hat", sampleName: "hihat"),
+            Track(name: "Hi-Hat 2", sampleName: "hihat2")
         ]
     }
     

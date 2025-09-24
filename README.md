@@ -42,10 +42,17 @@ Views/
 ```
 
 ### Core Systems
-- **AudioManager**: Audio playback, mixing, and sequencer timing
-- **SequencerState**: Pattern and step management
+- **AudioManager**: Professional-grade audio engine with real-time threading, pre-allocated buffers, and thread-safe operations
+- **SequencerState**: Pattern and step management with real-time updates
 - **RoomService**: Room data and collaboration logic
 - **AppCoordinatorView**: Application flow management
+
+### Audio Architecture
+- **AVAudioEngine**: Core audio processing with player nodes for each sample
+- **Real-Time Thread**: High-priority `DispatchQueue` with 2ms precision timing
+- **Pre-allocated Buffers**: Zero-latency sample playback using `AVAudioPCMBuffer`
+- **Thread-Safe Communication**: Lock-free design with atomic state access
+- **Audio Session Management**: Professional configuration with fallback support
 
 ## 🚀 Getting Started
 
@@ -94,9 +101,29 @@ Each component includes comprehensive documentation:
 - **Dependencies**: Required objects and services
 - **Preview Providers**: SwiftUI preview examples
 
+### Audio System Documentation
+- **[AudioManager.md](MusicCollab/Managers/AudioManager.md)**: Complete audio engine documentation
+- **Real-Time Threading**: Professional audio thread implementation
+- **Pre-allocated Buffers**: Zero-latency audio playback system
+- **Audio Session Management**: Low-latency configuration with fallback
+
 See individual component files for detailed documentation.
 
 ## 🔧 Development
+
+### Quick Reference
+
+#### Audio System
+- **AudioManager**: `AudioManager.shared` for all audio operations
+- **Thread Safety**: All audio operations run on dedicated thread
+- **Sample Playback**: Use `playKick()`, `playSnare()`, `playHiHat()`, `playHiHat2()`
+- **Sequencer Control**: `startPlayback()`, `stopPlayback()`, `pausePlayback()`
+- **Volume Control**: `updateMasterVolume(_:)` for global volume
+
+#### Component Integration
+- **Audio Operations**: Always go through AudioManager
+- **UI Updates**: Use `@ObservedObject` for AudioManager state
+- **Thread Safety**: UI updates happen on main thread automatically
 
 ### Adding New Components
 1. Create new Swift file in `Views/Components/`
@@ -112,10 +139,12 @@ See individual component files for detailed documentation.
 - Propagate changes through bindings
 
 ### Audio Integration
-- All audio operations go through `AudioManager`
-- Use `CADisplayLink` for precise timing
-- Apply volume and pan in real-time
-- Handle audio session configuration
+- **Real-Time Audio Threading**: Dedicated high-priority audio thread with 2ms precision timing
+- **Pre-allocated Buffers**: All samples pre-loaded into `AVAudioPCMBuffer` for zero-latency playback
+- **Thread-Safe Operations**: Audio operations isolated from main thread to prevent UI blocking
+- **Professional Audio Session**: Configured for low-latency playback with fallback support
+- **Route Change Handling**: Automatic recovery from headphone/device changes
+- **Real-Time Safety**: No memory allocations or blocking operations in audio thread
 
 ## 🎨 UI/UX Design
 
@@ -141,7 +170,10 @@ See individual component files for detailed documentation.
 
 ### Phase 1 - Core Features ✅
 - [x] Basic sequencer functionality
-- [x] Audio playback and mixing
+- [x] Professional audio engine with real-time threading
+- [x] Pre-allocated audio buffers for zero-latency playback
+- [x] Thread-safe audio operations
+- [x] Audio session management with fallback support
 - [x] Responsive UI design
 - [x] Room management
 

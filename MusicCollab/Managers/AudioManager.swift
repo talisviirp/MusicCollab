@@ -9,7 +9,7 @@ final class AudioManager: ObservableObject {
     private var isStarted = false
     private var isPlaying = false
     private var sequencer: AVAudioSequencer?
-    private var playerNodes: [String: AVAudioPlayerNode] = [:]
+    var playerNodes: [String: AVAudioPlayerNode] = [:]
     private var audioFiles: [String: AVAudioFile] = [:]
     private var sequencerState: SequencerState?
     private var sequencerTimer: Timer?
@@ -24,6 +24,9 @@ final class AudioManager: ObservableObject {
     
     // Pre-allocated buffers for real-time safety
     private var audioBuffers: [String: AVAudioPCMBuffer] = [:]
+    
+    // Effects management
+    private let effectsManager = EffectsManager.shared
     
     deinit {
         stopAudioThread()
@@ -43,16 +46,22 @@ final class AudioManager: ObservableObject {
         loadSamples()
         setupRouteChangeNotification()
         
-        // Configure audio session and start engine
+        // Configure audio session and start engine first
         do {
             try configureAudioSession()
             startEngine()
+            
+            // Setup effects manager after engine is ready
+            effectsManager.setup(with: engine)
         } catch {
             print("Failed to configure audio session: \(error)")
             // Try with minimal configuration
             do {
                 try configureMinimalAudioSession()
                 startEngine()
+                
+                // Setup effects manager after engine is ready
+                effectsManager.setup(with: engine)
             } catch {
                 print("Failed to configure minimal audio session: \(error)")
             }
@@ -71,6 +80,9 @@ final class AudioManager: ObservableObject {
                 print("Error: No audio nodes attached to engine")
                 return
             }
+            
+            // Setup master routing to ensure output connection
+            setupMasterRouting()
         }
         
         do {
@@ -119,6 +131,24 @@ final class AudioManager: ObservableObject {
     
     func setSequencerState(_ state: SequencerState) {
         self.sequencerState = state
+        
+        // Set up routing for all tracks in the pattern
+        for track in state.currentPattern.tracks {
+            setupTrackRouting(for: track)
+        }
+        
+        print("Sequencer state set - all tracks routed through EffectsManager")
+    }
+    
+    func setupTrackRouting(for track: Track) {
+        guard let playerNode = playerNodes[track.sampleName] else { return }
+        
+        // Set up the new routing through effects (EffectsManager handles disconnection)
+        effectsManager.setupTrackRouting(for: track, from: playerNode)
+    }
+    
+    func setupMasterRouting() {
+        effectsManager.setupMasterRouting()
     }
     
     func updateTempo(_ newTempo: Double) {
@@ -296,14 +326,21 @@ final class AudioManager: ObservableObject {
             let playerNode = AVAudioPlayerNode()
             playerNodes[sampleName] = playerNode
             engine.attach(playerNode)
-            engine.connect(playerNode, to: engine.mainMixerNode, format: nil)
         }
         
         // Setup sequencer
         sequencer = AVAudioSequencer(audioEngine: engine)
         
+        // Create a minimal audio graph to prevent engine initialization errors
+        // Connect one player node to main mixer as a fallback until EffectsManager takes over
+        if let firstPlayerNode = playerNodes.values.first {
+            engine.connect(firstPlayerNode, to: engine.mainMixerNode, format: nil)
+            print("Connected first player node to main mixer for engine initialization")
+        }
+        
         // Verify engine setup
         print("Audio engine setup complete - attached nodes: \(engine.attachedNodes.count)")
+        print("Player nodes created with fallback connection - EffectsManager will handle proper routing with track mixers")
     }
     
     private func loadSamples() {

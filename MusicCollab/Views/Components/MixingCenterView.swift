@@ -110,6 +110,7 @@ struct TrackMixerView: View {
     @State private var pan: Double
     @State private var isMuted: Bool
     @State private var isSoloed: Bool
+    @State private var showingEffectsPanel = false
     
     init(track: Track, sequencerState: SequencerState, isHorizontal: Bool = false) {
         self.track = track
@@ -122,10 +123,102 @@ struct TrackMixerView: View {
     }
     
     var body: some View {
-        if isHorizontal {
-            // Horizontal layout for landscape
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
+        Group {
+            if isHorizontal {
+                // Horizontal layout for landscape
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(track.name)
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                            
+                            // Solo button
+                            Button {
+                                isSoloed.toggle()
+                                updateTrack()
+                            } label: {
+                                Image(systemName: isSoloed ? "s.square.fill" : "s.square")
+                                    .font(.title2)
+                                    .foregroundColor(isSoloed ? .yellow : .accentColor)
+                            }
+                            
+                            // Mute button
+                            Button {
+                                isMuted.toggle()
+                                updateTrack()
+                            } label: {
+                                Image(systemName: isMuted ? "speaker.slash.fill" : "speaker.fill")
+                                    .font(.title2)
+                                    .foregroundColor(isMuted ? .red : .accentColor)
+                            }
+                            
+                            // Effects button
+                            Button {
+                                showingEffectsPanel = true
+                            } label: {
+                                Image(systemName: "waveform")
+                                    .font(.title2)
+                                    .foregroundColor(track.effects.isEmpty ? .accentColor : .purple)
+                            }
+                        }
+                        
+                        // Pan Control (moved above volume) - horizontal fader for landscape
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Pan")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            HStack {
+                                Text("-50")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                
+                                Slider(value: $pan, in: -1...1)
+                                    .accentColor(.green)
+                                    .onChange(of: pan) { updateTrack() }
+                                
+                                Text("+50")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Text(panText)
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        // Volume Control (vertical slider for landscape)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Volume")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Slider(value: $volume, in: 0...1)
+                                .accentColor(.blue)
+                                .rotationEffect(.degrees(-90))
+                                .frame(height: 120)
+                                .onChange(of: volume) { updateTrack() }
+                            
+                            Text("\(Int(volume * 100))%")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.primary, lineWidth: 2)
+                )
+                .frame(width: 200)
+            } else {
+                // Vertical layout for portrait
+                VStack(spacing: 12) {
                     HStack {
                         Text(track.name)
                             .font(.headline)
@@ -152,129 +245,60 @@ struct TrackMixerView: View {
                                 .font(.title2)
                                 .foregroundColor(isMuted ? .red : .accentColor)
                         }
+                        
+                        // Effects button
+                        Button {
+                            showingEffectsPanel = true
+                        } label: {
+                            Image(systemName: "waveform")
+                                .font(.title2)
+                                .foregroundColor(track.effects.isEmpty ? .accentColor : .purple)
+                        }
                     }
                     
-                    // Pan Control (moved above volume) - horizontal fader for landscape
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Pan")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
+                    VStack(spacing: 8) {
+                        // Volume Control
                         HStack {
-                            Text("-50")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
+                            Text("Volume")
+                                .font(.caption)
+                                .frame(width: 60, alignment: .leading)
+                            
+                            Slider(value: $volume, in: 0...1)
+                                .accentColor(.blue)
+                                .onChange(of: volume) { updateTrack() }
+                            
+                            Text("\(Int(volume * 100))%")
+                                .font(.caption)
+                                .frame(width: 40, alignment: .trailing)
+                        }
+                        
+                        // Pan Control - horizontal fader like volume
+                        HStack {
+                            Text("Pan")
+                                .font(.caption)
+                                .frame(width: 60, alignment: .leading)
                             
                             Slider(value: $pan, in: -1...1)
                                 .accentColor(.green)
                                 .onChange(of: pan) { updateTrack() }
                             
-                            Text("+50")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
+                            Text(panText)
+                                .font(.caption)
+                                .frame(width: 40, alignment: .trailing)
                         }
-                        
-                        Text(panText)
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    // Volume Control (vertical slider for landscape)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Volume")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        Slider(value: $volume, in: 0...1)
-                            .accentColor(.blue)
-                            .rotationEffect(.degrees(-90))
-                            .frame(height: 120)
-                            .onChange(of: volume) { updateTrack() }
-                        
-                        Text("\(Int(volume * 100))%")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
                     }
                 }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.primary, lineWidth: 2)
+                )
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.primary, lineWidth: 2)
-            )
-            .frame(width: 200)
-        } else {
-            // Vertical layout for portrait
-            VStack(spacing: 12) {
-                HStack {
-                    Text(track.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    // Solo button
-                    Button {
-                        isSoloed.toggle()
-                        updateTrack()
-                    } label: {
-                        Image(systemName: isSoloed ? "s.square.fill" : "s.square")
-                            .font(.title2)
-                            .foregroundColor(isSoloed ? .yellow : .accentColor)
-                    }
-                    
-                    // Mute button
-                    Button {
-                        isMuted.toggle()
-                        updateTrack()
-                    } label: {
-                        Image(systemName: isMuted ? "speaker.slash.fill" : "speaker.fill")
-                            .font(.title2)
-                            .foregroundColor(isMuted ? .red : .accentColor)
-                    }
-                }
-                
-                VStack(spacing: 8) {
-                    // Volume Control
-                    HStack {
-                        Text("Volume")
-                            .font(.caption)
-                            .frame(width: 60, alignment: .leading)
-                        
-                        Slider(value: $volume, in: 0...1)
-                            .accentColor(.blue)
-                            .onChange(of: volume) { updateTrack() }
-                        
-                        Text("\(Int(volume * 100))%")
-                            .font(.caption)
-                            .frame(width: 40, alignment: .trailing)
-                    }
-                    
-                    // Pan Control - horizontal fader like volume
-                    HStack {
-                        Text("Pan")
-                            .font(.caption)
-                            .frame(width: 60, alignment: .leading)
-                        
-                        Slider(value: $pan, in: -1...1)
-                            .accentColor(.green)
-                            .onChange(of: pan) { updateTrack() }
-                        
-                        Text(panText)
-                            .font(.caption)
-                            .frame(width: 40, alignment: .trailing)
-                    }
-                }
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.primary, lineWidth: 2)
-            )
+        }
+        .sheet(isPresented: $showingEffectsPanel) {
+            TrackEffectsPanel(track: track)
         }
     }
     
@@ -317,9 +341,11 @@ struct MasterVolumeView: View {
     let audioManager: AudioManager
     let isHorizontal: Bool
     @ObservedObject var sequencerState: SequencerState
+    @State private var showingMasterEffects = false
     
     var body: some View {
-        if isHorizontal {
+        Group {
+            if isHorizontal {
             // Horizontal layout
             HStack(spacing: 16) {
                 Text("Master")
@@ -349,6 +375,15 @@ struct MasterVolumeView: View {
                         Image(systemName: "stop.fill")
                             .font(.title2)
                             .foregroundColor(.red)
+                    }
+                    
+                    // Master Effects button
+                    Button {
+                        showingMasterEffects = true
+                    } label: {
+                        Image(systemName: "waveform")
+                            .font(.title2)
+                            .foregroundColor(.purple)
                     }
                 }
                 
@@ -417,6 +452,15 @@ struct MasterVolumeView: View {
                                 .font(.title2)
                                 .foregroundColor(.red)
                         }
+                        
+                        // Master Effects button
+                        Button {
+                            showingMasterEffects = true
+                        } label: {
+                            Image(systemName: "waveform")
+                                .font(.title2)
+                                .foregroundColor(.purple)
+                        }
                     }
                 }
                 
@@ -446,6 +490,10 @@ struct MasterVolumeView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(Color.primary, lineWidth: 2)
             )
+        }
+        }
+        .sheet(isPresented: $showingMasterEffects) {
+            MasterEffectsPanel()
         }
     }
 }
